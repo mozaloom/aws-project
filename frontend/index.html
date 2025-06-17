@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Manager</title>
+  <style>
+    :root {
+      --primary-color: #4a90e2;
+      --secondary-color: #50e3c2;
+      --bg-color: #f2f7ff;
+      --card-bg: #ffffff;
+      --text-color: #333;
+      --border-radius: 0.5rem;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 1rem;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 1rem;
+    }
+    .card legend {
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    label {
+      display: block;
+      margin: 0.5rem 0;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: var(--border-radius);
+      margin-top: 0.25rem;
+    }
+    button {
+      background-color: var(--primary-color);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 0.75rem;
+    }
+    button:hover {
+      background-color: var(--secondary-color);
+    }
+    #output {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 1rem;
+      margin-top: 1rem;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    footer {
+      text-align: center;
+      margin: 2rem 0 1rem;
+      font-size: 0.9rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Employee Manager</h1>
+  <div class="grid">
+    <fieldset class="card">
+      <legend>Service Status</legend>
+      <button id="btn-status">Ping API</button>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend>Create Employee</legend>
+      <label>ID:<input type="text" id="create-id" placeholder="e.g. emp123" /></label>
+      <label>Name:<input type="text" id="create-name" placeholder="e.g. John Doe" /></label>
+      <label>Role:<input type="text" id="create-role" placeholder="e.g. Engineer" /></label>
+      <button id="btn-create">Create</button>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend>Get Employee</legend>
+      <label>ID:<input type="text" id="get-id" placeholder="e.g. emp123" /></label>
+      <button id="btn-get">Get</button>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend>List All</legend>
+      <button id="btn-list">List Employees</button>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend>Update Employee</legend>
+      <label>ID:<input type="text" id="update-id" placeholder="e.g. emp123" /></label>
+      <label>Field:
+        <select id="update-key">
+          <option value="name">Name</option>
+          <option value="role">Role</option>
+        </select>
+      </label>
+      <label>New Value:<input type="text" id="update-value" placeholder="New Value" /></label>
+      <button id="btn-update">Update</button>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend>Delete Employee</legend>
+      <label>ID:<input type="text" id="delete-id" placeholder="e.g. emp123" /></label>
+      <button id="btn-delete">Delete</button>
+    </fieldset>
+  </div>
+
+  <div id="output" class="card">Results will appear here...</div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const API_BASE = 'https://xh2ioz0bv7.execute-api.us-east-1.amazonaws.com/production';
+      const output = document.getElementById('output');
+      
+      function show(result) {
+        output.textContent = JSON.stringify(result, null, 2);
+        output.scrollTop = 0;
+      }
+
+      async function call(path, method = 'GET', body) {
+        try {
+          const opts = { method, headers: { 'Content-Type': 'application/json' } };
+          if (body) opts.body = JSON.stringify(body);
+          const res = await fetch(API_BASE + path, opts);
+          const text = await res.text();
+          return text ? JSON.parse(text) : {};
+        } catch (err) {
+          return { error: err.message };
+        }
+      }
+
+      // Handlers
+      document.getElementById('btn-status').onclick = async () => show(await call('/status'));
+      document.getElementById('btn-create').onclick = async () => show(await call('/employee', 'POST', {
+        employeeid: document.getElementById('create-id').value,
+        name: document.getElementById('create-name').value,
+        role: document.getElementById('create-role').value
+      }));
+      document.getElementById('btn-get').onclick = async () => {
+        const id = document.getElementById('get-id').value;
+        show(await call(`/employee?employeeid=${encodeURIComponent(id)}`));
+      };
+      document.getElementById('btn-list').onclick = async () => show(await call('/employees'));
+      document.getElementById('btn-update').onclick = async () => show(await call('/employee', 'PATCH', {
+        employeeId: document.getElementById('update-id').value,
+        updateKey: document.getElementById('update-key').value,
+        updateValue: document.getElementById('update-value').value
+      }));
+      document.getElementById('btn-delete').onclick = async () => show(await call('/employee', 'DELETE', {
+        employeeId: document.getElementById('delete-id').value
+      }));
+    });
+  </script>
+  <footer>© 2025 Employee Manager App</footer>
+</body>
+</html>
